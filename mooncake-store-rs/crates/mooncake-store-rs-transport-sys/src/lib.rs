@@ -620,6 +620,9 @@ pub mod tent {
     pub const OPCODE_READ: c_int = 0;
     pub const OPCODE_WRITE: c_int = 1;
 
+    pub const PRIO_HIGH: c_int = 0;
+    pub const TRANSPORT_UNSPEC: c_int = 0;
+
     pub const STATUS_WAITING: c_int = 0;
     pub const STATUS_PENDING: c_int = 1;
     pub const STATUS_INVALID: c_int = 2;
@@ -639,6 +642,8 @@ pub mod tent {
         pub target_id: SegmentId,
         pub target_offset: u64,
         pub length: u64,
+        pub priority: c_int,
+        pub transport_hint: c_int,
     }
 
     #[repr(C)]
