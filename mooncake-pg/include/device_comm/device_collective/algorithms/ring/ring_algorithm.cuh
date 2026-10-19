@@ -39,6 +39,14 @@ cudaError_t launchRingAllReduceKernel(const AllReduceRequest& request,
 cudaError_t launchRingAllGatherKernel(const AllGatherRequest& request,
                                       RingDeviceState* state,
                                       cudaStream_t stream);
+cudaError_t launchRingReduceScatterKernel(const ReduceScatterRequest& request,
+                                          RingDeviceState* state,
+                                          cudaStream_t stream);
+cudaError_t launchRingBroadcastKernel(const BroadcastRequest& request,
+                                      RingDeviceState* state,
+                                      cudaStream_t stream);
+cudaError_t launchRingReduceKernel(const ReduceRequest& request,
+                                   RingDeviceState* state, cudaStream_t stream);
 
 }  // namespace mooncake
 

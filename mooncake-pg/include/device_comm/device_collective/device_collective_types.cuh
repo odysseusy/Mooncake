@@ -14,8 +14,16 @@
 
 namespace mooncake {
 
+enum class CollectiveFailureType : uint32_t {
+    Communication,
+    // The request requires a participant absent from the installed view.
+    // e.g. broadcast without active root.
+    UnavailableParticipant,
+};
+
 struct CollectiveResult {
     InGroupRank failed_rank = kInvalidInGroupRank;
+    CollectiveFailureType failure_type = CollectiveFailureType::Communication;
 
     [[nodiscard]] __device__ __forceinline__ bool succeeded() const {
         return failed_rank == kInvalidInGroupRank;
@@ -54,8 +62,47 @@ struct AllGatherRequest {
     int32_t* failed_ranks_hint = nullptr;
 };
 
+struct ReduceScatterRequest {
+    static constexpr OpType kOperation = OpType::ReduceScatter;
+
+    const void* send_buffer = nullptr;
+    void* recv_buffer = nullptr;
+    // Number of output elements per participant. Input uses in-group rank
+    // slots.
+    uint64_t count = 0;
+    DataType datatype = DataType::Float32;
+    ReduceOp op = ReduceOp::Sum;
+    int32_t* failed_ranks_hint = nullptr;
+};
+
+struct BroadcastRequest {
+    static constexpr OpType kOperation = OpType::Broadcast;
+
+    // Only the root uses send_buffer; every participant uses recv_buffer.
+    const void* send_buffer = nullptr;
+    void* recv_buffer = nullptr;
+    uint64_t count = 0;
+    DataType datatype = DataType::Float32;
+    InGroupRank root = kInvalidInGroupRank;
+    int32_t* failed_ranks_hint = nullptr;
+};
+
+struct ReduceRequest {
+    static constexpr OpType kOperation = OpType::Reduce;
+
+    // Every participant uses send_buffer; only the root uses recv_buffer.
+    const void* send_buffer = nullptr;
+    void* recv_buffer = nullptr;
+    uint64_t count = 0;
+    DataType datatype = DataType::Float32;
+    ReduceOp op = ReduceOp::Sum;
+    InGroupRank root = kInvalidInGroupRank;
+    int32_t* failed_ranks_hint = nullptr;
+};
+
 using DeviceCollectiveRequest =
-    std::variant<AllReduceRequest, AllGatherRequest>;
+    std::variant<AllReduceRequest, AllGatherRequest, ReduceScatterRequest,
+                 BroadcastRequest, ReduceRequest>;
 
 // Identity and shared addressing for one participant. Offsets are relative to
 // that participant's DTS region.
@@ -71,10 +118,31 @@ struct DeviceGroupView {
     uint64_t epoch = kInvalidViewEpoch;
     int32_t self_active_index = -1;
     uint32_t participant_count = 0;
+    // Active participants in increasing in-group rank order.
     CollectivePeer participants[kMaxNumRanks] = {};
     // Set by the startup CTA after the handshake; reset when a view is
     // installed.
     bool synchronized = false;
+
+    [[nodiscard]] __device__ __forceinline__ int32_t
+    activeIndex(InGroupRank rank) const {
+        // Fast path: active indices match in-group ranks before the first gap.
+        if (static_cast<uint32_t>(rank) < participant_count &&
+            participants[rank].in_group_rank == rank)
+            return rank;
+
+        // Missing ranks shift active indices left. Scan backward from the
+        // nearest unchecked index.
+        int32_t index = static_cast<int32_t>(participant_count);
+        if (rank < index) index = rank;
+        while (index > 0) {
+            --index;
+            const auto peer_rank = participants[index].in_group_rank;
+            if (peer_rank == rank) return index;
+            if (peer_rank < rank) break;
+        }
+        return -1;
+    }
 
     [[nodiscard]] __device__ __forceinline__ const CollectivePeer& self()
         const {

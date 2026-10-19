@@ -23,7 +23,10 @@ std::vector<DeviceCollectiveAlgorithmChoice>
 defaultDeviceCollectiveAlgorithmChoices() {
     constexpr auto max_bytes = std::numeric_limits<uint64_t>::max();
     return {{OpType::AllReduce, max_bytes, DeviceCollectiveAlgorithm::Ring},
-            {OpType::AllGather, max_bytes, DeviceCollectiveAlgorithm::Ring}};
+            {OpType::AllGather, max_bytes, DeviceCollectiveAlgorithm::Ring},
+            {OpType::ReduceScatter, max_bytes, DeviceCollectiveAlgorithm::Ring},
+            {OpType::Broadcast, max_bytes, DeviceCollectiveAlgorithm::Ring},
+            {OpType::Reduce, max_bytes, DeviceCollectiveAlgorithm::Ring}};
 }
 
 // Returns whether OneShot can be selected for the group's active members.

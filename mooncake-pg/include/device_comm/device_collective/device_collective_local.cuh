@@ -44,6 +44,37 @@ __device__ __forceinline__ void executeLocalOnlyCollective(
                                      block);
 }
 
+__device__ __forceinline__ void executeLocalOnlyCollective(
+    const ReduceScatterRequest& request, InGroupRank self_rank,
+    cooperative_groups::thread_block block) {
+    const uint64_t bytes = request.count * elementSize(request.datatype);
+    const auto* source = static_cast<const uint8_t*>(request.send_buffer) +
+                         static_cast<uint64_t>(self_rank) * bytes;
+    detail::copyLocalCollectiveInput(source, request.recv_buffer, bytes, block);
+}
+
+__device__ __forceinline__ void executeLocalOnlyCollective(
+    const BroadcastRequest& request, InGroupRank self_rank,
+    cooperative_groups::thread_block block) {
+    // Non-root callers need not supply a send buffer.
+    if (self_rank == request.root) {
+        const uint64_t bytes = request.count * elementSize(request.datatype);
+        detail::copyLocalCollectiveInput(request.send_buffer,
+                                         request.recv_buffer, bytes, block);
+    }
+}
+
+__device__ __forceinline__ void executeLocalOnlyCollective(
+    const ReduceRequest& request, InGroupRank self_rank,
+    cooperative_groups::thread_block block) {
+    // Non-root callers need not supply a receive buffer.
+    if (self_rank == request.root) {
+        const uint64_t bytes = request.count * elementSize(request.datatype);
+        detail::copyLocalCollectiveInput(request.send_buffer,
+                                         request.recv_buffer, bytes, block);
+    }
+}
+
 }  // namespace mooncake
 
 #endif  // MOONCAKE_PG_DEVICE_COMM_DEVICE_COLLECTIVE_DEVICE_COLLECTIVE_LOCAL_CUH

@@ -58,6 +58,9 @@ cudaError_t launchOneShotAllReduceKernel(const AllReduceRequest& request,
 cudaError_t launchOneShotAllGatherKernel(const AllGatherRequest& request,
                                          OneShotDeviceState* state,
                                          cudaStream_t stream);
+cudaError_t launchOneShotReduceScatterKernel(
+    const ReduceScatterRequest& request, OneShotDeviceState* state,
+    cudaStream_t stream);
 
 }  // namespace mooncake
 

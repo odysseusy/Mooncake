@@ -28,7 +28,7 @@ runOneShotChunks(CollectiveChunk<T> values, OneShotExchange<T>& exchange,
                          ? remaining
                          : exchange.chunkElementCapacity(),
         };
-        exchange.sendAll(chunk, block);
+        exchange.sendAll(chunk.source, chunk.count, 0, block);
         const auto failed = exchange.template reducePeers<Op>(chunk, block);
         PG_COLL_TRY(exchange.finish(failed, block));
         offset += chunk.count;

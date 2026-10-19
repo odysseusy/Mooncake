@@ -75,10 +75,13 @@ class OneShotExchange {
 
     // Before X sends n+2, it receives Y's n+1, so Y has consumed X's n.
     // Empty/local-only calls consume no sequence, preserving this dependency.
+    // rank_stride is measured in T elements. Send count elements starting at
+    // source + r * rank_stride to peer r, using its in-group rank. A zero
+    // stride sends the same values to every peer.
     __device__ __forceinline__ void sendAll(
-        CollectiveChunk<T> chunk,
+        const T* source, uint64_t count, uint64_t rank_stride,
         cooperative_groups::thread_block block) const {
-        const uint64_t pack_count = packCount(chunk.count);
+        const uint64_t pack_count = packCount(count);
         const uint64_t work = pack_count * view_.participant_count;
         const LLPacketOps packets(sequence_, timeout_ticks_);
         for (uint64_t index = block.thread_rank(); index < work;
@@ -88,8 +91,10 @@ class OneShotExchange {
                 continue;
             const auto& peer = view_.participants[active_index];
             const uint64_t pack_index = index % pack_count;
-            const auto value =
-                Pack::load(chunk.source, chunk.count, pack_index);
+            const auto* peer_source =
+                source +
+                static_cast<uint64_t>(peer.in_group_rank) * rank_stride;
+            const auto value = Pack::load(peer_source, count, pack_index);
             const uint64_t remote_offset =
                 plan_.packet_offsets[active_index] +
                 plan_.layout.packetIndex(

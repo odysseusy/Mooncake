@@ -15,8 +15,12 @@ if(USE_CUDA)
       "${_pg_device_source}"
       "${CMAKE_CURRENT_SOURCE_DIR}/device_comm/device_collective/algorithms/ring/ring_all_reduce.cu"
       "${CMAKE_CURRENT_SOURCE_DIR}/device_comm/device_collective/algorithms/ring/ring_all_gather.cu"
+      "${CMAKE_CURRENT_SOURCE_DIR}/device_comm/device_collective/algorithms/ring/ring_reduce_scatter.cu"
+      "${CMAKE_CURRENT_SOURCE_DIR}/device_comm/device_collective/algorithms/ring/ring_broadcast.cu"
+      "${CMAKE_CURRENT_SOURCE_DIR}/device_comm/device_collective/algorithms/ring/ring_reduce.cu"
       "${CMAKE_CURRENT_SOURCE_DIR}/device_comm/device_collective/algorithms/one_shot/one_shot_all_reduce.cu"
       "${CMAKE_CURRENT_SOURCE_DIR}/device_comm/device_collective/algorithms/one_shot/one_shot_all_gather.cu"
+      "${CMAKE_CURRENT_SOURCE_DIR}/device_comm/device_collective/algorithms/one_shot/one_shot_reduce_scatter.cu"
       "${CMAKE_CURRENT_SOURCE_DIR}/device_comm/device_transfer/routes/nccl_device_route/nccl_device_route.cu"
   )
 elseif(USE_MUSA OR USE_MACA)

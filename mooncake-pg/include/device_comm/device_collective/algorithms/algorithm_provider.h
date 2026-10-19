@@ -98,6 +98,21 @@ class AlgorithmProvider {
         return makePGError(PGErrorCode::NotSupported,
                            "device collective implementation is unavailable");
     }
+    virtual PGResult<void> enqueueImpl(const ReduceScatterRequest&,
+                                       cudaStream_t) const {
+        return makePGError(PGErrorCode::NotSupported,
+                           "device collective implementation is unavailable");
+    }
+    virtual PGResult<void> enqueueImpl(const BroadcastRequest&,
+                                       cudaStream_t) const {
+        return makePGError(PGErrorCode::NotSupported,
+                           "device collective implementation is unavailable");
+    }
+    virtual PGResult<void> enqueueImpl(const ReduceRequest&,
+                                       cudaStream_t) const {
+        return makePGError(PGErrorCode::NotSupported,
+                           "device collective implementation is unavailable");
+    }
 
    private:
     DeviceCollectiveAlgorithm type_;
